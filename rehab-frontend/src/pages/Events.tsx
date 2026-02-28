@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Users, Play, Phone, ArrowRight, Tag, ChevronRight, X } from 'lucide-react';
 import type { Event } from '../types';
+import { useLang } from '../context/LanguageContext';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 
 const mockEvents: Event[] = [
   {
@@ -23,7 +25,7 @@ const mockEvents: Event[] = [
     type: 'retreat',
     date: '2026-04-05',
     endDate: '2026-04-07',
-    location: 'Serenity Rehab, Cairo',
+    location: 'Serenity Recovery, Cairo',
     description: 'A refreshing 2-night retreat at our main facility. Features yoga, sound healing, nutrition workshops, and one-on-one therapy sessions in a supportive community setting.',
     capacity: 30,
     price: 2800,
@@ -35,11 +37,11 @@ const mockEvents: Event[] = [
     title: 'Understanding Addiction: A Family Workshop',
     type: 'workshop',
     date: '2026-03-08',
-    location: 'Serenity Rehab, Cairo',
+    location: 'Serenity Recovery, Cairo',
     description: 'A full-day educational workshop for families of individuals in recovery. Learn about addiction science, communication strategies, and how to build a healthy support system at home.',
     capacity: 40,
     price: 350,
-    imageUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191011?w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&q=80',
     tags: ['Family', 'Education', 'Free Lunch Included'],
   },
   {
@@ -70,7 +72,7 @@ const mockEvents: Event[] = [
     title: 'Creative Healing: Art Therapy Exhibition',
     type: 'event',
     date: '2026-04-15',
-    location: 'Serenity Rehab Gallery, Cairo',
+    location: 'Serenity Recovery Gallery, Cairo',
     description: 'An exhibition showcasing artwork created by patients as part of our art therapy program. A moving celebration of healing, expression, and transformation. Open to the public.',
     capacity: 100,
     imageUrl: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&q=80',
@@ -78,16 +80,17 @@ const mockEvents: Event[] = [
   },
 ];
 
-const typeConfig = {
-  retreat: { label: 'Retreat', color: 'bg-sage-600 text-white' },
-  workshop: { label: 'Workshop', color: 'bg-sand-500 text-white' },
-  event: { label: 'Event', color: 'bg-warm-500 text-white' },
+const arData: Record<string, { title: string; location: string; tags: string[] }> = {
+  '1': { title: 'رحلة التجديد الصحراوية',            location: 'صحراء سيناء، مصر',                  tags: ['الطبيعة', 'التأمل', 'مكثف', 'أماكن محدودة'] },
+  '2': { title: 'عطلة الرفاهية الربيعية',            location: 'سيرينيتي ريكفري، القاهرة',          tags: ['عطلة نهاية الأسبوع', 'يوغا', 'تغذية', 'مجتمع'] },
+  '3': { title: 'فهم الإدمان: ورشة عائلية',          location: 'سيرينيتي ريكفري، القاهرة',          tags: ['العائلة', 'تعليم', 'غداء مجاني'] },
+  '4': { title: 'حفل التعافي السنوي والجوائز',        location: 'القاعة الكبرى، ماريوت القاهرة',     tags: ['احتفال', 'مجتمع', 'حفل', 'جمع تبرعات'] },
+  '5': { title: 'اليقظة الذهنية في الطبيعة: رحلة يومية', location: 'محمية وادي دجلة، القاهرة',     tags: ['في الهواء الطلق', 'يقظة ذهنية', 'مجتمع', 'للمبتدئين'] },
+  '6': { title: 'الشفاء الإبداعي: معرض العلاج بالفن', location: 'معرض سيرينيتي ريكفري، القاهرة',   tags: ['فن', 'مجتمع', 'مفتوح للعموم', 'دخول مجاني'] },
 };
 
-const filterTypes = ['All', 'Retreat', 'Workshop', 'Event'];
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+function formatDate(dateStr: string, locale: string) {
+  return new Date(dateStr).toLocaleDateString(locale, { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 function formatDateShort(dateStr: string) {
@@ -96,11 +99,28 @@ function formatDateShort(dateStr: string) {
 }
 
 export default function Events() {
+  const { t, lang, isAr } = useLang();
   const [filter, setFilter] = useState('All');
+  useScrollReveal();
   const [callbackModal, setCallbackModal] = useState<Event | null>(null);
   const [videoModal, setVideoModal] = useState<Event | null>(null);
   const [callbackForm, setCallbackForm] = useState({ name: '', phone: '', email: '', time: '' });
   const [submitted, setSubmitted] = useState(false);
+
+  const dateLocale = lang === 'ar' ? 'ar-EG' : 'en-US';
+
+  const typeConfig = {
+    retreat: { label: t('events.filter.retreat'), color: 'bg-sage-600 text-white' },
+    workshop:{ label: t('events.filter.workshop'),color: 'bg-sand-500 text-white' },
+    event:   { label: t('events.filter.event'),   color: 'bg-warm-500 text-white' },
+  };
+
+  const filterTypes = [
+    { key: 'All',      label: t('events.filter.all') },
+    { key: 'Retreat',  label: t('events.filter.retreat') },
+    { key: 'Workshop', label: t('events.filter.workshop') },
+    { key: 'Event',    label: t('events.filter.event') },
+  ];
 
   const filtered = mockEvents.filter(
     (e) => filter === 'All' || e.type === filter.toLowerCase()
@@ -108,13 +128,18 @@ export default function Events() {
 
   const handleCallbackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // API call would go here
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
       setCallbackModal(null);
     }, 2500);
   };
+
+  const callbackTimes = [
+    { value: 'morning',   label: t('events.cb.time.morning') },
+    { value: 'afternoon', label: t('events.cb.time.afternoon') },
+    { value: 'evening',   label: t('events.cb.time.evening') },
+  ];
 
   return (
     <div className="min-h-screen bg-cream">
@@ -130,12 +155,12 @@ export default function Events() {
         />
         <div className="video-overlay absolute inset-0" />
         <div className="relative max-w-7xl mx-auto text-center">
-          <span className="text-sage-300 text-sm font-semibold uppercase tracking-widest">Upcoming</span>
-          <h1 className="text-4xl md:text-5xl text-white mt-2 mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Events & Retreats
+          <span className="text-sage-300 text-sm font-semibold uppercase tracking-widest">{t('events.label')}</span>
+          <h1 className="text-5xl md:text-6xl text-white mt-2 mb-4 italic tracking-wide" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 500 }}>
+            {t('events.title')}
           </h1>
           <p className="text-sage-200 text-lg max-w-2xl mx-auto">
-            Curated experiences that inspire, heal, and connect. From intimate retreats to community celebrations.
+            {t('events.subtitle')}
           </p>
         </div>
       </div>
@@ -145,26 +170,26 @@ export default function Events() {
         <div className="flex items-center gap-3 mb-10 flex-wrap">
           {filterTypes.map((type) => (
             <button
-              key={type}
-              onClick={() => setFilter(type)}
+              key={type.key}
+              onClick={() => setFilter(type.key)}
               className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                filter === type
+                filter === type.key
                   ? 'bg-sage-600 text-white shadow'
                   : 'bg-white text-sage-600 border border-sage-200 hover:border-sage-400'
               }`}
             >
-              {type}
+              {type.label}
             </button>
           ))}
         </div>
 
         {/* Event Cards */}
         <div className="space-y-6">
-          {filtered.map((event) => {
+          {filtered.map((event, i) => {
             const dateInfo = formatDateShort(event.date);
             const cfg = typeConfig[event.type];
             return (
-              <div key={event.id} className="card flex flex-col md:flex-row overflow-hidden">
+              <div key={event.id} className={`card flex flex-col md:flex-row overflow-hidden reveal stagger-${Math.min(i + 1, 5)}`}>
                 {/* Date badge */}
                 <div className="hidden md:flex flex-col items-center justify-center w-24 bg-sage-50 border-r border-sage-100 shrink-0 py-6">
                   <span className="text-3xl font-bold text-sage-700" style={{ fontFamily: "'Playfair Display', serif" }}>{dateInfo.day}</span>
@@ -191,34 +216,29 @@ export default function Events() {
                 <div className="flex-1 p-6 flex flex-col">
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <h3 className="text-xl font-bold text-sage-900" style={{ fontFamily: "'Playfair Display', serif" }}>
-                      {event.title}
+                      {isAr ? (arData[event.id]?.title ?? event.title) : event.title}
                     </h3>
-                    {event.price ? (
-                      <span className="text-sage-600 font-bold text-lg shrink-0">EGP {event.price.toLocaleString()}</span>
-                    ) : (
-                      <span className="badge bg-sage-100 text-sage-700 shrink-0">Free</span>
-                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-4 text-sm text-sage-500 mb-4">
                     <span className="flex items-center gap-1.5">
                       <Calendar className="w-4 h-4" />
-                      {formatDate(event.date)}{event.endDate && ` – ${formatDate(event.endDate)}`}
+                      {formatDate(event.date, dateLocale)}{event.endDate && ` – ${formatDate(event.endDate, dateLocale)}`}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <MapPin className="w-4 h-4" />
-                      {event.location}
+                      {isAr ? (arData[event.id]?.location ?? event.location) : event.location}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Users className="w-4 h-4" />
-                      {event.capacity} spots
+                      {event.capacity} {t('events.spots')}
                     </span>
                   </div>
 
                   <p className="text-sage-600 text-sm leading-relaxed mb-4 flex-1">{event.description}</p>
 
                   <div className="flex flex-wrap gap-1.5 mb-5">
-                    {event.tags.map((tag) => (
+                    {(isAr ? (arData[event.id]?.tags ?? event.tags) : event.tags).map((tag) => (
                       <span key={tag} className="badge bg-sage-50 text-sage-600 border border-sage-200 text-xs">
                         <Tag className="w-3 h-3 mr-1" />{tag}
                       </span>
@@ -227,13 +247,13 @@ export default function Events() {
 
                   <div className="flex flex-wrap gap-3">
                     <Link to={`/contact?event=${event.id}`} className="btn-primary text-sm">
-                      Register Now <ChevronRight className="w-4 h-4" />
+                      {t('events.register')} <ChevronRight className="w-4 h-4" />
                     </Link>
                     <button
                       onClick={() => setCallbackModal(event)}
                       className="btn-secondary text-sm"
                     >
-                      <Phone className="w-4 h-4" /> Request Callback
+                      <Phone className="w-4 h-4" /> {t('events.callback')}
                     </button>
                   </div>
                 </div>
@@ -245,23 +265,23 @@ export default function Events() {
         {filtered.length === 0 && (
           <div className="text-center py-20">
             <Calendar className="w-12 h-12 text-sage-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-sage-700 mb-2">No events found</h3>
-            <p className="text-sage-400">Check back soon for new events and retreats.</p>
+            <h3 className="text-xl font-semibold text-sage-700 mb-2">{t('events.noFound.title')}</h3>
+            <p className="text-sage-400">{t('events.noFound.subtitle')}</p>
           </div>
         )}
       </div>
 
-      {/* Newsletter / Stay Updated */}
+      {/* Newsletter */}
       <section className="py-16 px-4 bg-sage-700">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Don't Miss an Event
+            {t('events.newsletter.title')}
           </h2>
-          <p className="text-sage-200 mb-6">Subscribe to receive updates about upcoming retreats, workshops, and wellness events.</p>
+          <p className="text-sage-200 mb-6">{t('events.newsletter.subtitle')}</p>
           <div className="flex gap-3">
-            <input type="email" placeholder="Your email address" className="input-field flex-1" />
+            <input type="email" placeholder={t('events.newsletter.email')} className="input-field flex-1" />
             <button className="btn-outline shrink-0">
-              Subscribe <ArrowRight className="w-4 h-4" />
+              {t('events.newsletter.subscribe')} <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -274,9 +294,9 @@ export default function Events() {
             <div className="flex items-start justify-between mb-6">
               <div>
                 <h3 className="text-xl font-bold text-sage-900" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  Request a Callback
+                  {t('events.cb.title')}
                 </h3>
-                <p className="text-sage-500 text-sm mt-1">For: {callbackModal.title}</p>
+                <p className="text-sage-500 text-sm mt-1">{t('events.cb.for')} {callbackModal.title}</p>
               </div>
               <button onClick={() => { setCallbackModal(null); setSubmitted(false); }} className="text-sage-400 hover:text-sage-600">
                 <X className="w-5 h-5" />
@@ -290,58 +310,58 @@ export default function Events() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h4 className="font-bold text-sage-900 mb-2">Callback Requested!</h4>
-                <p className="text-sage-500 text-sm">We'll call you within 2 business hours.</p>
+                <h4 className="font-bold text-sage-900 mb-2">{t('events.cb.success.title')}</h4>
+                <p className="text-sage-500 text-sm">{t('events.cb.success.subtitle')}</p>
               </div>
             ) : (
               <form onSubmit={handleCallbackSubmit} className="space-y-4">
                 <div>
-                  <label className="label">Your Name</label>
+                  <label className="label">{t('events.cb.name.label')}</label>
                   <input
                     type="text"
                     required
                     value={callbackForm.name}
                     onChange={(e) => setCallbackForm({ ...callbackForm, name: e.target.value })}
                     className="input-field"
-                    placeholder="Full name"
+                    placeholder={t('events.cb.name.ph')}
                   />
                 </div>
                 <div>
-                  <label className="label">Phone Number</label>
+                  <label className="label">{t('events.cb.phone.label')}</label>
                   <input
                     type="tel"
                     required
                     value={callbackForm.phone}
                     onChange={(e) => setCallbackForm({ ...callbackForm, phone: e.target.value })}
                     className="input-field"
-                    placeholder="+20 xxx xxx xxxx"
+                    placeholder={t('events.cb.phone.ph')}
                   />
                 </div>
                 <div>
-                  <label className="label">Email (optional)</label>
+                  <label className="label">{t('events.cb.email.label')}</label>
                   <input
                     type="email"
                     value={callbackForm.email}
                     onChange={(e) => setCallbackForm({ ...callbackForm, email: e.target.value })}
                     className="input-field"
-                    placeholder="your@email.com"
+                    placeholder={t('events.cb.email.ph')}
                   />
                 </div>
                 <div>
-                  <label className="label">Preferred Call Time</label>
+                  <label className="label">{t('events.cb.time.label')}</label>
                   <select
                     value={callbackForm.time}
                     onChange={(e) => setCallbackForm({ ...callbackForm, time: e.target.value })}
                     className="input-field"
                   >
-                    <option value="">Any time</option>
-                    <option value="morning">Morning (9 AM – 12 PM)</option>
-                    <option value="afternoon">Afternoon (12 PM – 4 PM)</option>
-                    <option value="evening">Evening (4 PM – 7 PM)</option>
+                    <option value="">{t('events.cb.time.any')}</option>
+                    {callbackTimes.map((ct) => (
+                      <option key={ct.value} value={ct.value}>{ct.label}</option>
+                    ))}
                   </select>
                 </div>
                 <button type="submit" className="btn-primary w-full justify-center">
-                  <Phone className="w-4 h-4" /> Request Callback
+                  <Phone className="w-4 h-4" /> {t('events.cb.submit')}
                 </button>
               </form>
             )}
@@ -357,8 +377,8 @@ export default function Events() {
             <h3 className="text-xl font-bold text-sage-900 mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
               {videoModal.title}
             </h3>
-            <p className="text-sage-500 mb-6">Event video will be loaded from the API.</p>
-            <button onClick={() => setVideoModal(null)} className="btn-secondary">Close</button>
+            <p className="text-sage-500 mb-6">{t('events.video.placeholder')}</p>
+            <button onClick={() => setVideoModal(null)} className="btn-secondary">{t('events.video.close')}</button>
           </div>
         </div>
       )}

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { CheckCircle, Calendar, Clock, User, Mail, Phone, FileText, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
+import { useLang } from '../../context/LanguageContext';
 
 export type BookingService = {
-  type: 'doctor' | 'group-therapy' | 'daycare';
+  type: 'consultant' | 'group-therapy' | 'daycare';
   label: string;
   options?: { id: string; name: string }[];
   preselectedId?: string;
@@ -18,9 +19,8 @@ const timeSlots = [
   '4:00 PM', '5:00 PM',
 ];
 
-const steps = ['Select Service', 'Pick Date & Time', 'Your Details', 'Confirm'];
-
 export default function BookingForm({ service }: BookingFormProps) {
+  const { t, lang } = useLang();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -34,6 +34,13 @@ export default function BookingForm({ service }: BookingFormProps) {
     notes: '',
   });
 
+  const steps = [
+    t('booking.step.service'),
+    t('booking.step.datetime'),
+    t('booking.step.details'),
+    t('booking.step.confirm'),
+  ];
+
   const update = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   const canProceed = () => {
@@ -43,17 +50,11 @@ export default function BookingForm({ service }: BookingFormProps) {
     return true;
   };
 
-  const next = () => {
-    if (step < 3) setStep((s) => s + 1);
-  };
-
-  const back = () => {
-    if (step > 0) setStep((s) => s - 1);
-  };
+  const next = () => { if (step < 3) setStep((s) => s + 1); };
+  const back = () => { if (step > 0) setStep((s) => s - 1); };
 
   const submit = async () => {
     setLoading(true);
-    // API call placeholder
     await new Promise((r) => setTimeout(r, 1800));
     setLoading(false);
     setDone(true);
@@ -64,6 +65,8 @@ export default function BookingForm({ service }: BookingFormProps) {
     return service.options.find((o) => o.id === form.serviceId)?.name ?? service.label;
   };
 
+  const dateLocale = lang === 'ar' ? 'ar-EG' : 'en-US';
+
   if (done) {
     return (
       <div className="text-center py-16 px-4">
@@ -71,30 +74,30 @@ export default function BookingForm({ service }: BookingFormProps) {
           <CheckCircle className="w-10 h-10 text-sage-600" />
         </div>
         <h2 className="text-2xl font-bold text-sage-900 mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
-          Booking Confirmed!
+          {t('booking.success.title')}
         </h2>
         <p className="text-sage-600 mb-2">
-          Thank you, <strong>{form.name}</strong>. Your appointment has been received.
+          {t('booking.success.thank')} <strong>{form.name}</strong>. {t('booking.success.received')}
         </p>
         <p className="text-sage-500 text-sm mb-8">
-          A confirmation will be sent to <strong>{form.email}</strong>. We'll contact you to finalize details.
+          {t('booking.success.confirm')} <strong>{form.email}</strong>. {t('booking.success.contact')}
         </p>
         <div className="bg-sage-50 rounded-2xl p-6 max-w-sm mx-auto text-left mb-8 space-y-3 text-sm">
           <div className="flex justify-between">
-            <span className="text-sage-500">Service</span>
+            <span className="text-sage-500">{t('booking.confirm.service')}</span>
             <span className="text-sage-800 font-medium">{getServiceName()}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sage-500">Date</span>
-            <span className="text-sage-800 font-medium">{new Date(form.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+            <span className="text-sage-500">{t('booking.confirm.date')}</span>
+            <span className="text-sage-800 font-medium">{new Date(form.date).toLocaleDateString(dateLocale, { weekday: 'long', month: 'long', day: 'numeric' })}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sage-500">Time</span>
+            <span className="text-sage-500">{t('booking.confirm.time')}</span>
             <span className="text-sage-800 font-medium">{form.time}</span>
           </div>
         </div>
         <button onClick={() => { setDone(false); setStep(0); setForm({ serviceId: service.preselectedId || '', date: '', time: '', name: '', email: '', phone: '', notes: '' }); }} className="btn-secondary">
-          Book Another Appointment
+          {t('booking.success.again')}
         </button>
       </div>
     );
@@ -130,7 +133,7 @@ export default function BookingForm({ service }: BookingFormProps) {
         {step === 0 && (
           <div>
             <h3 className="text-xl font-bold text-sage-900 mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Select {service.label}
+              {t('booking.select.prefix')} {service.label}
             </h3>
             {service.options && service.options.length > 0 ? (
               <div className="space-y-3">
@@ -155,7 +158,7 @@ export default function BookingForm({ service }: BookingFormProps) {
               </div>
             ) : (
               <div className="bg-sage-50 rounded-xl p-5 text-sage-700">
-                You are booking: <strong>{service.label}</strong>
+                {t('booking.youAreBooking')} <strong>{service.label}</strong>
               </div>
             )}
           </div>
@@ -165,11 +168,11 @@ export default function BookingForm({ service }: BookingFormProps) {
         {step === 1 && (
           <div>
             <h3 className="text-xl font-bold text-sage-900 mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Choose Date & Time
+              {t('booking.step.datetime')}
             </h3>
             <div className="mb-6">
               <label className="label flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-sage-500" /> Preferred Date
+                <Calendar className="w-4 h-4 text-sage-500" /> {t('booking.date.label')}
               </label>
               <input
                 type="date"
@@ -181,7 +184,7 @@ export default function BookingForm({ service }: BookingFormProps) {
             </div>
             <div>
               <label className="label flex items-center gap-2">
-                <Clock className="w-4 h-4 text-sage-500" /> Preferred Time
+                <Clock className="w-4 h-4 text-sage-500" /> {t('booking.time.label')}
               </label>
               <div className="grid grid-cols-4 gap-2 mt-2">
                 {timeSlots.map((slot) => (
@@ -207,32 +210,32 @@ export default function BookingForm({ service }: BookingFormProps) {
         {step === 2 && (
           <div>
             <h3 className="text-xl font-bold text-sage-900 mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Your Details
+              {t('booking.details.title')}
             </h3>
             <div className="space-y-4">
               <div>
                 <label className="label flex items-center gap-2">
-                  <User className="w-4 h-4 text-sage-500" /> Full Name
+                  <User className="w-4 h-4 text-sage-500" /> {t('booking.details.name.label')}
                 </label>
-                <input type="text" required value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" placeholder="Your full name" />
+                <input type="text" required value={form.name} onChange={(e) => update('name', e.target.value)} className="input-field" placeholder={t('booking.details.name.ph')} />
               </div>
               <div>
                 <label className="label flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-sage-500" /> Email Address
+                  <Mail className="w-4 h-4 text-sage-500" /> {t('booking.details.email.label')}
                 </label>
-                <input type="email" required value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" placeholder="your@email.com" />
+                <input type="email" required value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" placeholder={t('booking.details.email.ph')} />
               </div>
               <div>
                 <label className="label flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-sage-500" /> Phone Number
+                  <Phone className="w-4 h-4 text-sage-500" /> {t('booking.details.phone.label')}
                 </label>
-                <input type="tel" required value={form.phone} onChange={(e) => update('phone', e.target.value)} className="input-field" placeholder="+20 xxx xxx xxxx" />
+                <input type="tel" required value={form.phone} onChange={(e) => update('phone', e.target.value)} className="input-field" placeholder={t('booking.details.phone.ph')} />
               </div>
               <div>
                 <label className="label flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-sage-500" /> Additional Notes <span className="text-sage-400 font-normal">(optional)</span>
+                  <FileText className="w-4 h-4 text-sage-500" /> {t('booking.details.notes.label')} <span className="text-sage-400 font-normal">{t('booking.details.notes.optional')}</span>
                 </label>
-                <textarea value={form.notes} onChange={(e) => update('notes', e.target.value)} className="input-field min-h-24 resize-none" placeholder="Any relevant information about your situation or specific needs..." />
+                <textarea value={form.notes} onChange={(e) => update('notes', e.target.value)} className="input-field min-h-24 resize-none" placeholder={t('booking.details.notes.ph')} />
               </div>
             </div>
           </div>
@@ -242,31 +245,31 @@ export default function BookingForm({ service }: BookingFormProps) {
         {step === 3 && (
           <div>
             <h3 className="text-xl font-bold text-sage-900 mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Confirm Booking
+              {t('booking.confirm.title')}
             </h3>
             <div className="bg-sage-50 rounded-2xl p-6 space-y-4 mb-6">
               {[
-                { label: 'Service', value: getServiceName() },
-                { label: 'Date', value: form.date ? new Date(form.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '' },
-                { label: 'Time', value: form.time },
-                { label: 'Name', value: form.name },
-                { label: 'Email', value: form.email },
-                { label: 'Phone', value: form.phone },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between items-start gap-4">
-                  <span className="text-sage-500 text-sm shrink-0">{label}</span>
+                { labelKey: 'booking.confirm.service', value: getServiceName() },
+                { labelKey: 'booking.confirm.date',    value: form.date ? new Date(form.date).toLocaleDateString(dateLocale, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '' },
+                { labelKey: 'booking.confirm.time',    value: form.time },
+                { labelKey: 'booking.confirm.name',    value: form.name },
+                { labelKey: 'booking.confirm.email',   value: form.email },
+                { labelKey: 'booking.confirm.phone',   value: form.phone },
+              ].map(({ labelKey, value }) => (
+                <div key={labelKey} className="flex justify-between items-start gap-4">
+                  <span className="text-sage-500 text-sm shrink-0">{t(labelKey)}</span>
                   <span className="text-sage-800 text-sm font-medium text-right">{value}</span>
                 </div>
               ))}
               {form.notes && (
                 <div>
-                  <span className="text-sage-500 text-sm block mb-1">Notes</span>
+                  <span className="text-sage-500 text-sm block mb-1">{t('booking.confirm.notes')}</span>
                   <span className="text-sage-800 text-sm">{form.notes}</span>
                 </div>
               )}
             </div>
             <p className="text-sage-500 text-sm">
-              By confirming, you agree to our cancellation policy. A team member will contact you to finalize details.
+              {t('booking.confirm.policy')}
             </p>
           </div>
         )}
@@ -281,7 +284,7 @@ export default function BookingForm({ service }: BookingFormProps) {
               step === 0 ? 'text-sage-300 cursor-not-allowed' : 'text-sage-600 hover:bg-sage-50'
             }`}
           >
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {t('booking.back')}
           </button>
 
           {step < 3 ? (
@@ -291,7 +294,7 @@ export default function BookingForm({ service }: BookingFormProps) {
               disabled={!canProceed()}
               className={`btn-primary text-sm ${!canProceed() ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              Continue <ArrowRight className="w-4 h-4" />
+              {t('booking.continue')} <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <button
@@ -301,9 +304,9 @@ export default function BookingForm({ service }: BookingFormProps) {
               className="btn-primary text-sm min-w-36 justify-center"
             >
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t('booking.processing')}</>
               ) : (
-                <>Confirm Booking <ArrowRight className="w-4 h-4" /></>
+                <>{t('booking.submit')} <ArrowRight className="w-4 h-4" /></>
               )}
             </button>
           )}

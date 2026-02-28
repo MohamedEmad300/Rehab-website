@@ -1,4 +1,4 @@
-export interface Doctor {
+export interface Consultant {
   id: string;
   name: string;
   title: string;
@@ -51,7 +51,7 @@ export interface Event {
 }
 
 export interface BookingFormData {
-  serviceType: 'doctor' | 'group-therapy' | 'daycare';
+  serviceType: 'consultant' | 'group-therapy' | 'daycare';
   serviceId?: string;
   date: string;
   time: string;
