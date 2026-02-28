@@ -33,6 +33,9 @@ A bilingual (English / Arabic) React frontend for **Serenity Recovery**, a menta
 ## Getting Started
 
 ```bash
+# Go to frontend directory
+cd rehab-frontend
+
 # Install dependencies
 npm install
 
